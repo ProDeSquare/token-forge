@@ -110,6 +110,39 @@ impl TokenForge {
         Ok(format!("{}.{}.{}", header_b64, claims_b64, signature_b64))
     }
 
+    pub fn verify_token(&self, token: &str) -> Result<Claims, TokenError> {
+        let parts: Vec<&str> = token.split('.').collect();
+        if parts.len() != 3 {
+            return Err(TokenError::DecodeFailed);
+        }
+
+        let header_b64 = parts[0];
+        let claims_b64 = parts[1];
+        let signature_b64 = parts[2];
+
+        let signing_input = format!("{}.{}", header_b64, claims_b64);
+        let expected_signature = self.sign(&signing_input)?;
+        let provided_signature = self.base64url_decode(signature_b64)?;
+
+        if expected_signature != provided_signature {
+            return Err(TokenError::DecodeFailed);
+        }
+
+        let claims_json = self.base64url_decode(claims_b64)?;
+        let claims_str = String::from_utf8(claims_json).map_err(|_| TokenError::DecodeFailed)?;
+        let claims: Claims =
+            serde_json::from_str(&claims_str).map_err(|_| TokenError::DecodeFailed)?;
+
+        if let Some(exp) = claims.exp {
+            let now = Utc::now().timestamp();
+            if now > exp {
+                return Err(TokenError::DecodeFailed);
+            }
+        }
+
+        Ok(claims)
+    }
+
     pub fn with_secret(secret: &str) -> Self {
         TokenForge {
             secret: secret.as_bytes().to_vec(),
