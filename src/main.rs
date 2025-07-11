@@ -1,5 +1,5 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use clap::{CommandFactory, Parser, Subcommand};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
@@ -213,6 +213,12 @@ impl TokenForge {
     }
 }
 
+fn format_timestamp(timestamp: i64) -> String {
+    DateTime::from_timestamp(timestamp, 0)
+        .map(|dt| dt.format("%Y-%m-%d %H:%M:%S UTC").to_string())
+        .unwrap_or_else(|| "Invalid timestamp".to_string())
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -248,10 +254,10 @@ fn main() {
                     if verbose {
                         match token_forge.verify_token(&token) {
                             Ok(claims) => {
-                                println!("Issued at: {}", claims.iat);
+                                println!("Issued at: {}", format_timestamp(claims.iat));
 
                                 if let Some(exp) = claims.exp {
-                                    println!("Expires at: {}", exp);
+                                    println!("Expires at: {}", format_timestamp(exp));
                                 }
                             }
                             Err(e) => {
@@ -274,10 +280,10 @@ fn main() {
                     println!("{}", json);
 
                     if verbose {
-                        println!("Issued at: {}", claims.iat);
+                        println!("Issued at: {}", format_timestamp(claims.iat));
 
                         if let Some(exp) = claims.exp {
-                            println!("Expires at: {}", exp);
+                            println!("Expires at: {}", format_timestamp(exp));
                         }
                     }
                 }
@@ -322,9 +328,9 @@ fn run_demo(token_forge: &TokenForge) {
                 Ok(claims) => match serde_json::to_string_pretty(&claims.payload) {
                     Ok(json) => {
                         println!("Payload: {}", json);
-                        println!("Issued at: {}", claims.iat);
+                        println!("Issued at: {}", format_timestamp(claims.iat));
                         if let Some(exp) = claims.exp {
-                            println!("Expires at: {}", exp);
+                            println!("Expires at: {}", format_timestamp(exp));
                         }
                     }
                     Err(_) => println!("Error: Could not decode token"),
@@ -345,7 +351,7 @@ fn run_demo(token_forge: &TokenForge) {
                 Ok(claims) => match serde_json::to_string_pretty(&claims.payload) {
                     Ok(json) => {
                         println!("Payload: {}", json);
-                        println!("Issued at: {}", claims.iat);
+                        println!("Issued at: {}", format_timestamp(claims.iat));
                     }
                     Err(_) => println!("Error: Could not decode token"),
                 },
