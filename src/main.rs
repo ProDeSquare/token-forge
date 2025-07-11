@@ -1,12 +1,13 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use chrono::Utc;
+use clap::{CommandFactory, Parser, Subcommand};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::{path::PathBuf, process};
 use thiserror::Error;
 
 type HmacSha256 = Hmac<Sha256>;
@@ -41,6 +42,51 @@ pub enum TokenError {
     FileError,
     #[error("Environment variable SECRET not found")]
     EnvError,
+}
+
+#[derive(Parser)]
+#[command(name = "tokenforge")]
+#[command(about = "TokenForge - Token service")]
+#[command(version = "1.0.0")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Generate {
+        #[arg(short, long, help = "JSON file containing the payload")]
+        file: PathBuf,
+
+        #[arg(
+            short,
+            long,
+            help = "Expiry time in seconds (optional, token never expires if not set)"
+        )]
+        expiry: Option<i64>,
+
+        #[arg(
+            short,
+            long,
+            help = "Show detailed information including issued at and expires at"
+        )]
+        verbose: bool,
+    },
+
+    Decode {
+        #[arg(short, long, help = "Token to decode")]
+        token: String,
+
+        #[arg(
+            short,
+            long,
+            help = "Show detailed information including issued at and expires at"
+        )]
+        verbose: bool,
+    },
+
+    Demo,
 }
 
 pub struct TokenForge {
@@ -168,5 +214,86 @@ impl TokenForge {
 }
 
 fn main() {
-    println!("Hello from Token Forge!");
+    let cli = Cli::parse();
+
+    if cli.command.is_none() {
+        let mut cmd = Cli::command();
+        cmd.print_help().unwrap();
+        return;
+    }
+
+    let token_forge = match TokenForge::new() {
+        Ok(tf) => tf,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            process::exit(1);
+        }
+    };
+
+    match cli.command.unwrap() {
+        Commands::Generate {
+            file,
+            expiry,
+            verbose,
+        } => {
+            if !file.exists() {
+                eprintln!("Error: File '{}' does not exist", file.display());
+                process::exit(1);
+            }
+
+            match token_forge.generate_from_file(&file, expiry) {
+                Ok(token) => {
+                    println!("{}", token);
+
+                    if verbose {
+                        match token_forge.verify_token(&token) {
+                            Ok(claims) => {
+                                println!("Issued at: {}", claims.iat);
+
+                                if let Some(exp) = claims.exp {
+                                    println!("Expires at: {}", exp);
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Error parsing the token for verbose output: {}", e);
+                                process::exit(1);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    process::exit(1);
+                }
+            }
+        }
+
+        Commands::Decode { token, verbose } => match token_forge.verify_token(&token) {
+            Ok(claims) => match serde_json::to_string(&claims.payload) {
+                Ok(json) => {
+                    println!("{}", json);
+
+                    if verbose {
+                        println!("Issued at: {}", claims.iat);
+
+                        if let Some(exp) = claims.exp {
+                            println!("Expires at: {}", exp);
+                        }
+                    }
+                }
+                Err(_) => {
+                    eprintln!("Error: Could not decode token");
+                    process::exit(1);
+                }
+            },
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            }
+        },
+
+        Commands::Demo => {
+            //
+        }
+    }
 }
