@@ -1,0 +1,14 @@
+stages:
+  - test
+
+variables:
+  CARGO_TERM_COLOR: always
+
+test:
+  stage: test
+  image: rust:latest
+  script:
+    - cargo build --verbose
+    - cargo test --verbose
+  only:
+    - master
