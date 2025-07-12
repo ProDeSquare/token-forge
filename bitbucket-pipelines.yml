@@ -1,0 +1,10 @@
+image: rust:latest
+
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Build and Test
+          script:
+            - cargo build --verbose
+            - cargo test --verbose
