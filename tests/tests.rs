@@ -71,8 +71,8 @@ fn test_expired_token() {
     let token = token_forge.generate_token(payload, Some(-1)).unwrap();
 
     match token_forge.verify_token(&token) {
-        Err(TokenError::DecodeFailed) => (),
-        _ => panic!("Expected DecodeFailed error"),
+        Err(TokenError::TokenExpired) => (),
+        _ => panic!("Expected Token Expired error"),
     }
 }
 
@@ -82,7 +82,7 @@ fn test_invalid_token() {
 
     let invalid_token = "invalid.token.here";
     match token_forge.verify_token(invalid_token) {
-        Err(TokenError::DecodeFailed) => (),
-        _ => panic!("Expected DecodeFailed error"),
+        Err(TokenError::InvalidSignature) => (),
+        _ => panic!("Expected Invalid Signature error"),
     }
 }
