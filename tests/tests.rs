@@ -82,7 +82,7 @@ fn test_invalid_token() {
 
     let invalid_token = "invalid.token.here";
     match token_forge.verify_token(invalid_token) {
-        Err(TokenError::InvalidSignature) => (),
+        Err(TokenError::DecodeFailed) => (),
         _ => panic!("Expected Invalid Signature error"),
     }
 }
