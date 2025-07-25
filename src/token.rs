@@ -39,13 +39,6 @@ impl TokenForge {
     ) -> Result<String, TokenError> {
         let file_content = fs::read_to_string(file_path).map_err(|_| TokenError::FileError)?;
 
-        // let token_request: TokenRequest =
-        //     serde_json::from_str(&file_content).map_err(|_| TokenError::InvalidJsonFile)?;
-
-        // if token_request.payload.is_empty() {
-        //     return Err(TokenError::InvalidJsonFile);
-        // }
-
         let payload: HashMap<String, serde_json::Value> =
             serde_json::from_str(&file_content).map_err(|_| TokenError::InvalidJsonFile)?;
 
