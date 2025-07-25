@@ -2,6 +2,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum TokenError {
+    #[error("Could not decode token")]
+    DecodeFailed,
+
     #[error("Token format is invalid")]
     MalformedToken,
 
