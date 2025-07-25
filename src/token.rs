@@ -71,10 +71,10 @@ impl TokenForge {
             typ: "TOK".to_string(),
         };
 
-        let header_json = serde_json::to_string(&header).map_err(|_| TokenError::DecodeFailed)?;
+        let header_json = serde_json::to_string(&header).map_err(|_| TokenError::InvalidHeader)?;
         let header_b64 = self.base64url_encode(header_json.as_bytes());
 
-        let claims_json = serde_json::to_string(&claims).map_err(|_| TokenError::DecodeFailed)?;
+        let claims_json = serde_json::to_string(&claims).map_err(|_| TokenError::InvalidClaims)?;
         let claims_b64 = self.base64url_encode(claims_json.as_bytes());
 
         let signing_input = format!("{}.{}", header_b64, claims_b64);
@@ -87,7 +87,7 @@ impl TokenForge {
     pub fn verify_token(&self, token: &str) -> Result<Claims, TokenError> {
         let parts: Vec<&str> = token.split('.').collect();
         if parts.len() != 3 {
-            return Err(TokenError::DecodeFailed);
+            return Err(TokenError::MalformedToken);
         }
 
         let header_b64 = parts[0];
@@ -99,27 +99,27 @@ impl TokenForge {
         let provided_signature = self.base64url_decode(signature_b64)?;
 
         if expected_signature != provided_signature {
-            return Err(TokenError::DecodeFailed);
+            return Err(TokenError::InvalidSignature);
         }
 
         let claims_json = self.base64url_decode(claims_b64)?;
-        let claims_str = String::from_utf8(claims_json).map_err(|_| TokenError::DecodeFailed)?;
+        let claims_str = String::from_utf8(claims_json).map_err(|_| TokenError::InvalidClaims)?;
         let claims: Claims =
-            serde_json::from_str(&claims_str).map_err(|_| TokenError::DecodeFailed)?;
+            serde_json::from_str(&claims_str).map_err(|_| TokenError::InvalidClaims)?;
 
         let header_json = self.base64url_decode(header_b64)?;
-        let header_str = String::from_utf8(header_json).map_err(|_| TokenError::DecodeFailed)?;
+        let header_str = String::from_utf8(header_json).map_err(|_| TokenError::InvalidHeader)?;
         let header: Header =
-            serde_json::from_str(&header_str).map_err(|_| TokenError::DecodeFailed)?;
+            serde_json::from_str(&header_str).map_err(|_| TokenError::InvalidHeader)?;
 
         if header.alg != "HS256" || header.typ != "TOK" {
-            return Err(TokenError::DecodeFailed);
+            return Err(TokenError::InvalidHeader);
         }
 
         if let Some(exp) = claims.exp {
             let now = Utc::now().timestamp();
             if now > exp {
-                return Err(TokenError::DecodeFailed);
+                return Err(TokenError::TokenExpired);
             }
         }
 
@@ -128,7 +128,7 @@ impl TokenForge {
 
     fn sign(&self, data: &str) -> Result<Vec<u8>, TokenError> {
         let mut mac =
-            HmacSha256::new_from_slice(&self.secret).map_err(|_| TokenError::DecodeFailed)?;
+            HmacSha256::new_from_slice(&self.secret).map_err(|_| TokenError::InvalidSignature)?;
         mac.update(data.as_bytes());
         Ok(mac.finalize().into_bytes().to_vec())
     }
@@ -140,6 +140,6 @@ impl TokenForge {
     fn base64url_decode(&self, input: &str) -> Result<Vec<u8>, TokenError> {
         URL_SAFE_NO_PAD
             .decode(input)
-            .map_err(|_| TokenError::DecodeFailed)
+            .map_err(|_| TokenError::InvalidBase64)
     }
 }
