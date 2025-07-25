@@ -99,7 +99,7 @@ impl TokenForge {
         let provided_signature = self.base64url_decode(signature_b64)?;
 
         if expected_signature != provided_signature {
-            return Err(TokenError::InvalidSignature);
+            return Err(TokenError::DecodeFailed);
         }
 
         let claims_json = self.base64url_decode(claims_b64)?;
@@ -128,7 +128,7 @@ impl TokenForge {
 
     fn sign(&self, data: &str) -> Result<Vec<u8>, TokenError> {
         let mut mac =
-            HmacSha256::new_from_slice(&self.secret).map_err(|_| TokenError::InvalidSignature)?;
+            HmacSha256::new_from_slice(&self.secret).map_err(|_| TokenError::DecodeFailed)?;
         mac.update(data.as_bytes());
         Ok(mac.finalize().into_bytes().to_vec())
     }
@@ -140,6 +140,6 @@ impl TokenForge {
     fn base64url_decode(&self, input: &str) -> Result<Vec<u8>, TokenError> {
         URL_SAFE_NO_PAD
             .decode(input)
-            .map_err(|_| TokenError::InvalidBase64)
+            .map_err(|_| TokenError::DecodeFailed)
     }
 }
