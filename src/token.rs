@@ -1,5 +1,5 @@
 use crate::error::TokenError;
-use crate::model::{Claims, Header, TokenRequest};
+use crate::model::{Claims, Header};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use chrono::Utc;
 use hmac::{Hmac, Mac};
@@ -39,14 +39,21 @@ impl TokenForge {
     ) -> Result<String, TokenError> {
         let file_content = fs::read_to_string(file_path).map_err(|_| TokenError::FileError)?;
 
-        let token_request: TokenRequest =
+        // let token_request: TokenRequest =
+        //     serde_json::from_str(&file_content).map_err(|_| TokenError::InvalidJsonFile)?;
+
+        // if token_request.payload.is_empty() {
+        //     return Err(TokenError::InvalidJsonFile);
+        // }
+
+        let payload: HashMap<String, serde_json::Value> =
             serde_json::from_str(&file_content).map_err(|_| TokenError::InvalidJsonFile)?;
 
-        if token_request.payload.is_empty() {
+        if payload.is_empty() {
             return Err(TokenError::InvalidJsonFile);
         }
 
-        self.generate_token(token_request.payload, expires_in_seconds)
+        self.generate_token(payload, expires_in_seconds)
     }
 
     pub fn generate_token(

@@ -15,8 +15,3 @@ pub struct Claims {
     #[serde(flatten)]
     pub payload: HashMap<String, serde_json::Value>,
 }
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct TokenRequest {
-    pub payload: HashMap<String, serde_json::Value>,
-}
