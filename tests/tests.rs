@@ -29,12 +29,10 @@ fn test_token_from_file() {
     let mut temp_file = NamedTempFile::new().unwrap();
     let json_content = r#"
         {
-            "payload": {
-                "user_id": "27081999",
-                "name": "Hamza Mughal",
-                "email": "hamza@prodesquare.com",
-                "role": "admin"
-            }
+            "user_id": "27081999",
+            "name": "Hamza Mughal",
+            "email": "hamza@prodesquare.com",
+            "role": "admin"
         }
         "#;
 
