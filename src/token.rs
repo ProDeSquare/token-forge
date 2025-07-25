@@ -107,6 +107,15 @@ impl TokenForge {
         let claims: Claims =
             serde_json::from_str(&claims_str).map_err(|_| TokenError::DecodeFailed)?;
 
+        let header_json = self.base64url_decode(header_b64)?;
+        let header_str = String::from_utf8(header_json).map_err(|_| TokenError::DecodeFailed)?;
+        let header: Header =
+            serde_json::from_str(&header_str).map_err(|_| TokenError::DecodeFailed)?;
+
+        if header.alg != "HS256" || header.typ != "TOK" {
+            return Err(TokenError::DecodeFailed);
+        }
+
         if let Some(exp) = claims.exp {
             let now = Utc::now().timestamp();
             if now > exp {
