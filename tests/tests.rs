@@ -1,3 +1,5 @@
+use base64::Engine as _;
+use hmac::Mac;
 use std::collections::HashMap;
 use std::io::Write;
 use tempfile::NamedTempFile;
@@ -143,5 +145,63 @@ fn test_wrong_secret_signature_verification() {
     match token_forge2.verify_token(&token) {
         Err(TokenError::DecodeFailed) => (),
         _ => panic!("Expected Decode Failed error when verifying with wrong secret"),
+    }
+}
+
+#[test]
+fn test_invalid_json_in_header() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let invalid_header = "{alg:HS256,typ:TOK}";
+    let invalid_header_b64 =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(invalid_header.as_bytes());
+
+    let valid_payload = r#"{"iat":1676964000}"#;
+    let valid_payload_b64 =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(valid_payload.as_bytes());
+
+    let signing_input = format!("{}.{}", invalid_header_b64, valid_payload_b64);
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"test_secret").unwrap();
+    mac.update(signing_input.as_bytes());
+    let signature = mac.finalize().into_bytes();
+    let signature_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&signature);
+
+    let invalid_token = format!(
+        "{}.{}.{}",
+        invalid_header_b64, valid_payload_b64, signature_b64
+    );
+
+    match token_forge.verify_token(&invalid_token) {
+        Err(TokenError::InvalidHeader) => (),
+        _ => panic!("Expected Invalid Header error for malformed JSON in header"),
+    }
+}
+
+#[test]
+fn test_invalid_json_in_payload() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let valid_header = r#"{"alg":"HS256","typ":"TOK"}"#;
+    let valid_header_b64 =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(valid_header.as_bytes());
+
+    let invalid_payload = "{iat:1676964000}";
+    let invalid_payload_b64 =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(invalid_payload.as_bytes());
+
+    let signing_input = format!("{}.{}", valid_header_b64, invalid_payload_b64);
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"test_secret").unwrap();
+    mac.update(signing_input.as_bytes());
+    let signature = mac.finalize().into_bytes();
+    let signature_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&signature);
+
+    let invalid_token = format!(
+        "{}.{}.{}",
+        valid_header_b64, invalid_payload_b64, signature_b64
+    );
+
+    match token_forge.verify_token(&invalid_token) {
+        Err(TokenError::InvalidClaims) => (),
+        _ => panic!("Expected InvalidClaims error for malformed JSON in payload"),
     }
 }
