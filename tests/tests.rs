@@ -94,13 +94,13 @@ fn test_malformed_token_wrong_number_of_parts() {
     let malformed_token = "hamza.mughal";
     match token_forge.verify_token(malformed_token) {
         Err(TokenError::MalformedToken) => (),
-        _ => panic!("Expected Malformed Token error for token with wrong number of parts")
+        _ => panic!("Expected Malformed Token error for token with wrong number of parts"),
     }
 
     let malformed_token = "hamza.the.prodesquare.mughal";
     match token_forge.verify_token(malformed_token) {
         Err(TokenError::MalformedToken) => (),
-        _ => panic!("Expected Malformed Token error for token with wrong number of parts")
+        _ => panic!("Expected Malformed Token error for token with wrong number of parts"),
     }
 }
 
@@ -117,5 +117,17 @@ fn test_invalid_base64_signature() {
     match token_forge.verify_token(&invalid_token) {
         Err(TokenError::DecodeFailed) => (),
         _ => panic!("Expected Decode Failed error for invalid base64 signature"),
+    }
+}
+
+#[test]
+fn test_invalid_base64_payload() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let invalid_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IlRPSyJ9.invalid_base64!!!.signature";
+
+    match token_forge.verify_token(invalid_token) {
+        Err(TokenError::DecodeFailed) => (),
+        _ => panic!("Expected Decode Failed error for invalid base64 payload"),
     }
 }
