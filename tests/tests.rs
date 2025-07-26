@@ -370,3 +370,14 @@ fn test_very_large_expiry_time() {
     assert!(claims.exp.is_some());
     assert!(claims.exp.unwrap() > chrono::Utc::now().timestamp());
 }
+
+#[test]
+fn test_empty_secret() {
+    let token_forge = TokenForge::with_secret("");
+
+    let payload = HashMap::new();
+    let token = token_forge.generate_token(payload, None).unwrap();
+
+    let claims = token_forge.verify_token(&token).unwrap();
+    assert!(claims.payload.is_empty());
+}
