@@ -381,3 +381,20 @@ fn test_empty_secret() {
     let claims = token_forge.verify_token(&token).unwrap();
     assert!(claims.payload.is_empty());
 }
+
+#[test]
+fn test_unicode_in_payload() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let mut payload = HashMap::new();
+    payload.insert("unicode_text".to_string(),
+        serde_json::Value::String("🚀 Unicode: café, naïve, 北京".to_string()));
+    payload.insert("emoji".to_string(),
+        serde_json::Value::String("😀🎉🔥".to_string()));
+
+    let token = token_forge.generate_token(payload.clone(), None).unwrap();
+    let claims = token_forge.verify_token(&token).unwrap();
+
+    assert_eq!(claims.payload.get("unicode_text"), payload.get("unicode_text"));
+    assert_eq!(claims.payload.get("emoji"), payload.get("emoji"));
+}
