@@ -103,3 +103,19 @@ fn test_malformed_token_wrong_number_of_parts() {
         _ => panic!("Expected Malformed Token error for token with wrong number of parts")
     }
 }
+
+#[test]
+fn test_invalid_base64_signature() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let payload = HashMap::new();
+    let valid_token = token_forge.generate_token(payload, None).unwrap();
+    let parts: Vec<&str> = valid_token.split('.').collect();
+
+    let invalid_token = format!("{}.{}.invalid_base64!!!", parts[0], parts[1]);
+
+    match token_forge.verify_token(&invalid_token) {
+        Err(TokenError::DecodeFailed) => (),
+        _ => panic!("Expected Decode Failed error for invalid base64 signature"),
+    }
+}
