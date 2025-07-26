@@ -86,3 +86,20 @@ fn test_invalid_token() {
         _ => panic!("Expected Invalid Signature error"),
     }
 }
+
+#[test]
+fn test_malformed_token_wrong_number_of_parts() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let malformed_token = "hamza.mughal";
+    match token_forge.verify_token(malformed_token) {
+        Err(TokenError::MalformedToken) => (),
+        _ => panic!("Expected Malformed Token error for token with wrong number of parts")
+    }
+
+    let malformed_token = "hamza.the.prodesquare.mughal";
+    match token_forge.verify_token(malformed_token) {
+        Err(TokenError::MalformedToken) => (),
+        _ => panic!("Expected Malformed Token error for token with wrong number of parts")
+    }
+}
