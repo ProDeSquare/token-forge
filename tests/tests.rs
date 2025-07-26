@@ -296,3 +296,77 @@ fn test_nonexistent_file() {
         _ => panic!("Expected File Error for nonexistent file"),
     }
 }
+
+#[test]
+fn test_complex_payload_types() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let mut payload = HashMap::new();
+
+    payload.insert(
+        "string".to_string(),
+        serde_json::Value::String("hamza".to_string()),
+    );
+    payload.insert(
+        "number".to_string(),
+        serde_json::Value::Number(serde_json::Number::from(42)),
+    );
+    payload.insert("boolean".to_string(), serde_json::Value::Bool(true));
+    payload.insert("null".to_string(), serde_json::Value::Null);
+
+    let array = serde_json::Value::Array(vec![
+        serde_json::Value::String("item1".to_string()),
+        serde_json::Value::String("item2".to_string()),
+    ]);
+    payload.insert("array".to_string(), array);
+
+    let mut nested_obj = serde_json::Map::new();
+    nested_obj.insert(
+        "nested_key".to_string(),
+        serde_json::Value::String("nested_value".to_string()),
+    );
+    payload.insert("object".to_string(), serde_json::Value::Object(nested_obj));
+
+    let token = token_forge
+        .generate_token(payload.clone(), Some(3600))
+        .unwrap();
+    let claims = token_forge.verify_token(&token).unwrap();
+
+    assert_eq!(claims.payload.get("string").unwrap(), "hamza");
+    assert_eq!(claims.payload.get("number").unwrap(), &42);
+    assert_eq!(claims.payload.get("boolean").unwrap(), &true);
+    assert_eq!(
+        claims.payload.get("null").unwrap(),
+        &serde_json::Value::Null
+    );
+    assert!(claims.payload.get("array").unwrap().is_array());
+    assert!(claims.payload.get("object").unwrap().is_object());
+}
+
+#[test]
+fn test_negative_expiry_time() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let payload = HashMap::new();
+
+    let token = token_forge.generate_token(payload, Some(-1)).unwrap();
+
+    match token_forge.verify_token(&token) {
+        Err(TokenError::TokenExpired) => (),
+        _ => panic!("Expected Token Expired error for negative expiry time"),
+    }
+}
+
+#[test]
+fn test_very_large_expiry_time() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let payload = HashMap::new();
+    let token = token_forge
+        .generate_token(payload, Some(100 * 365 * 24 * 60 * 60))
+        .unwrap();
+    let claims = token_forge.verify_token(&token).unwrap();
+
+    assert!(claims.exp.is_some());
+    assert!(claims.exp.unwrap() > chrono::Utc::now().timestamp());
+}
