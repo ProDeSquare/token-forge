@@ -257,3 +257,42 @@ fn test_wrong_type_in_header() {
         _ => panic!("Expected Invalid Header error for wrong token type"),
     }
 }
+
+#[test]
+fn test_empty_json_file() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let mut temp_file = NamedTempFile::new().unwrap();
+    temp_file.write_all(b"{}").unwrap();
+
+    match token_forge.generate_from_file(&temp_file.path().to_path_buf(), None) {
+        Err(TokenError::InvalidJsonFile) => (),
+        _ => panic!("Expected InvalidJsonFile error for empty JSON object"),
+    }
+}
+
+#[test]
+fn test_invalid_json_file_syntax() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let invalid_json = r#"{"name": "Hamza", "invalid": }"#;
+    temp_file.write_all(invalid_json.as_bytes()).unwrap();
+
+    match token_forge.generate_from_file(&temp_file.path().to_path_buf(), None) {
+        Err(TokenError::InvalidJsonFile) => (),
+        _ => panic!("Expected InvalidJsonFile error for invalid JSON syntax"),
+    }
+}
+
+#[test]
+fn test_nonexistent_file() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let nonexistent_path = std::path::PathBuf::from("/nonexistent/path/prodesquare.json");
+
+    match token_forge.generate_from_file(&nonexistent_path, None) {
+        Err(TokenError::FileError) => (),
+        _ => panic!("Expected File Error for nonexistent file"),
+    }
+}
