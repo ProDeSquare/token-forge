@@ -202,6 +202,58 @@ fn test_invalid_json_in_payload() {
 
     match token_forge.verify_token(&invalid_token) {
         Err(TokenError::InvalidClaims) => (),
-        _ => panic!("Expected InvalidClaims error for malformed JSON in payload"),
+        _ => panic!("Expected Invalid Claims error for malformed JSON in payload"),
+    }
+}
+
+#[test]
+fn test_wrong_algorithm_in_header() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let wrong_alg_header = r#"{"alg":"RS256","typ":"TOK"}"#;
+    let header_b64 =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(wrong_alg_header.as_bytes());
+
+    let valid_payload = r#"{"iat":1676964000}"#;
+    let payload_b64 =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(valid_payload.as_bytes());
+
+    let signing_input = format!("{}.{}", header_b64, payload_b64);
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"test_secret").unwrap();
+    mac.update(signing_input.as_bytes());
+    let signature = mac.finalize().into_bytes();
+    let signature_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&signature);
+
+    let invalid_token = format!("{}.{}.{}", header_b64, payload_b64, signature_b64);
+
+    match token_forge.verify_token(&invalid_token) {
+        Err(TokenError::InvalidHeader) => (),
+        _ => panic!("Expected Invalid Header error for wrong algorithm"),
+    }
+}
+
+#[test]
+fn test_wrong_type_in_header() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let wrong_type_header = r#"{"alg":"HS256","typ":"JWT"}"#;
+    let header_b64 =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(wrong_type_header.as_bytes());
+
+    let valid_payload = r#"{"iat":1676964000}"#;
+    let payload_b64 =
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(valid_payload.as_bytes());
+
+    let signing_input = format!("{}.{}", header_b64, payload_b64);
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"test_secret").unwrap();
+    mac.update(signing_input.as_bytes());
+    let signature = mac.finalize().into_bytes();
+    let signature_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&signature);
+
+    let invalid_token = format!("{}.{}.{}", header_b64, payload_b64, signature_b64);
+
+    match token_forge.verify_token(&invalid_token) {
+        Err(TokenError::InvalidHeader) => (),
+        _ => panic!("Expected Invalid Header error for wrong token type"),
     }
 }
