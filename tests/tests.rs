@@ -131,3 +131,17 @@ fn test_invalid_base64_payload() {
         _ => panic!("Expected Decode Failed error for invalid base64 payload"),
     }
 }
+
+#[test]
+fn test_wrong_secret_signature_verification() {
+    let token_forge1 = TokenForge::with_secret("secret1");
+    let token_forge2 = TokenForge::with_secret("secret2");
+
+    let payload = HashMap::new();
+    let token = token_forge1.generate_token(payload, None).unwrap();
+
+    match token_forge2.verify_token(&token) {
+        Err(TokenError::DecodeFailed) => (),
+        _ => panic!("Expected Decode Failed error when verifying with wrong secret"),
+    }
+}
