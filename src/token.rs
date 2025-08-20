@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use subtle::ConstantTimeEq;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -98,7 +99,7 @@ impl TokenForge {
         let expected_signature = self.sign(&signing_input)?;
         let provided_signature = self.base64url_decode(signature_b64)?;
 
-        if expected_signature != provided_signature {
+        if !bool::from(expected_signature.ct_eq(&provided_signature)) {
             return Err(TokenError::DecodeFailed);
         }
 
