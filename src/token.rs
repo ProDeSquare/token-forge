@@ -86,9 +86,24 @@ impl TokenForge {
     }
 
     pub fn verify_token(&self, token: &str) -> Result<Claims, TokenError> {
+        if token.trim().is_empty() {
+            return Err(TokenError::MalformedToken);
+        }
+
         let parts: Vec<&str> = token.split('.').collect();
+
         if parts.len() != 3 {
             return Err(TokenError::MalformedToken);
+        }
+
+        if parts.iter().any(|part| part.is_empty()) {
+            return Err(TokenError::MalformedToken);
+        }
+
+        for part in &parts {
+            if !part.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+                return Err(TokenError::InvalidBase64);
+            }
         }
 
         let header_b64 = parts[0];
