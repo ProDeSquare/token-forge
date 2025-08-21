@@ -117,8 +117,8 @@ fn test_invalid_base64_signature() {
     let invalid_token = format!("{}.{}.invalid_base64!!!", parts[0], parts[1]);
 
     match token_forge.verify_token(&invalid_token) {
-        Err(TokenError::DecodeFailed) => (),
-        _ => panic!("Expected Decode Failed error for invalid base64 signature"),
+        Err(TokenError::InvalidBase64) => (),
+        _ => panic!("Expected Invalid Base64 error for invalid base64 signature"),
     }
 }
 
@@ -129,8 +129,8 @@ fn test_invalid_base64_payload() {
     let invalid_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IlRPSyJ9.invalid_base64!!!.signature";
 
     match token_forge.verify_token(invalid_token) {
-        Err(TokenError::DecodeFailed) => (),
-        _ => panic!("Expected Decode Failed error for invalid base64 payload"),
+        Err(TokenError::InvalidBase64) => (),
+        _ => panic!("Expected Invalid Base64 error for invalid base64 payload"),
     }
 }
 
