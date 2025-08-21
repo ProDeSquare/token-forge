@@ -101,7 +101,10 @@ impl TokenForge {
         }
 
         for part in &parts {
-            if !part.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+            if !part
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+            {
                 return Err(TokenError::InvalidBase64);
             }
         }
