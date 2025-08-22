@@ -126,6 +126,8 @@ impl TokenForge {
         let claims: Claims =
             serde_json::from_str(&claims_str).map_err(|_| TokenError::InvalidClaims)?;
 
+        self.validate_iat_timestamp(&claims)?;
+
         let header_json = self.base64url_decode(header_b64)?;
         let header_str = String::from_utf8(header_json).map_err(|_| TokenError::InvalidHeader)?;
         let header: Header =
@@ -143,6 +145,23 @@ impl TokenForge {
         }
 
         Ok(claims)
+    }
+
+    fn validate_iat_timestamp(&self, claims: &Claims) -> Result<(), TokenError> {
+        let now = Utc::now().timestamp();
+
+        const CLOCK_SKEW_TOLERANCE: i64 = 300;
+        if claims.iat > now + CLOCK_SKEW_TOLERANCE {
+            return Err(TokenError::InvalidTimestamp);
+        }
+
+        if let Some(exp) = claims.exp {
+            if claims.iat >= exp {
+                return Err(TokenError::InvalidTimestamp);
+            }
+        }
+
+        Ok(())
     }
 
     fn sign(&self, data: &str) -> Result<Vec<u8>, TokenError> {
