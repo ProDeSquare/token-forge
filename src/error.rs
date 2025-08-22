@@ -31,4 +31,7 @@ pub enum TokenError {
 
     #[error("Base64 decoding failed")]
     InvalidBase64,
+
+    #[error("Invalid Timestamp")]
+    InvalidTimestamp,
 }
