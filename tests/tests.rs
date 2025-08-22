@@ -1,8 +1,10 @@
 use base64::Engine as _;
+use chrono::Utc;
 use hmac::Mac;
 use std::collections::HashMap;
 use std::io::Write;
 use tempfile::NamedTempFile;
+use token_forge::Claims;
 use token_forge::{TokenError, TokenForge};
 
 #[test]
@@ -69,8 +71,14 @@ fn test_token_without_expiration() {
 fn test_expired_token() {
     let token_forge = TokenForge::with_secret("test_secret");
 
-    let payload = HashMap::new();
-    let token = token_forge.generate_token(payload, Some(-1)).unwrap();
+    let now = Utc::now().timestamp();
+    let claims = Claims {
+        iat: now - 7200,
+        exp: Some(now - 3600),
+        payload: HashMap::new(),
+    };
+
+    let token = token_forge.create_token(claims).unwrap();
 
     match token_forge.verify_token(&token) {
         Err(TokenError::TokenExpired) => (),
@@ -352,8 +360,8 @@ fn test_negative_expiry_time() {
     let token = token_forge.generate_token(payload, Some(-1)).unwrap();
 
     match token_forge.verify_token(&token) {
-        Err(TokenError::TokenExpired) => (),
-        _ => panic!("Expected Token Expired error for negative expiry time"),
+        Err(TokenError::InvalidTimestamp) => (),
+        _ => panic!("Expected Invalid Timestamp error for negative expiry time"),
     }
 }
 
@@ -387,14 +395,21 @@ fn test_unicode_in_payload() {
     let token_forge = TokenForge::with_secret("test_secret");
 
     let mut payload = HashMap::new();
-    payload.insert("unicode_text".to_string(),
-        serde_json::Value::String("🚀 Unicode: café, naïve, 北京".to_string()));
-    payload.insert("emoji".to_string(),
-        serde_json::Value::String("😀🎉🔥".to_string()));
+    payload.insert(
+        "unicode_text".to_string(),
+        serde_json::Value::String("🚀 Unicode: café, naïve, 北京".to_string()),
+    );
+    payload.insert(
+        "emoji".to_string(),
+        serde_json::Value::String("😀🎉🔥".to_string()),
+    );
 
     let token = token_forge.generate_token(payload.clone(), None).unwrap();
     let claims = token_forge.verify_token(&token).unwrap();
 
-    assert_eq!(claims.payload.get("unicode_text"), payload.get("unicode_text"));
+    assert_eq!(
+        claims.payload.get("unicode_text"),
+        payload.get("unicode_text")
+    );
     assert_eq!(claims.payload.get("emoji"), payload.get("emoji"));
 }
