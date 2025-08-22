@@ -413,3 +413,22 @@ fn test_unicode_in_payload() {
     );
     assert_eq!(claims.payload.get("emoji"), payload.get("emoji"));
 }
+
+#[test]
+fn test_future_iat_token() {
+    let token_forge = TokenForge::with_secret("test_secret");
+
+    let future_time = Utc::now().timestamp() + 3600;
+    let claims = Claims {
+        iat: future_time,
+        exp: Some(future_time + 3600),
+        payload: HashMap::new(),
+    };
+
+    let token = token_forge.create_token(claims).unwrap();
+
+    match token_forge.verify_token(&token) {
+        Err(TokenError::InvalidTimestamp) => (),
+        _ => panic!("Expected Invalid Timestamp error for future dated tokens"),
+    }
+}
