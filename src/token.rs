@@ -1,5 +1,6 @@
 use crate::error::TokenError;
 use crate::model::{Claims, Header};
+use crate::secret::SecretValidator;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use chrono::Utc;
 use hmac::{Hmac, Mac};
@@ -22,15 +23,19 @@ impl TokenForge {
 
         let secret = env::var("SECRET").map_err(|_| TokenError::EnvError)?;
 
+        SecretValidator::validate_secret(&secret)?;
+
         Ok(TokenForge {
             secret: secret.into_bytes(),
         })
     }
 
-    pub fn with_secret(secret: &str) -> Self {
-        TokenForge {
+    pub fn with_secret(secret: &str) -> Result<Self, TokenError> {
+        SecretValidator::validate_secret(secret)?;
+
+        Ok(TokenForge {
             secret: secret.as_bytes().to_vec(),
-        }
+        })
     }
 
     pub fn generate_from_file(
