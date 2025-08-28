@@ -9,12 +9,12 @@ use token_forge::{TokenError, TokenForge};
 
 #[test]
 fn test_token_generation_and_verification() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let mut payload = HashMap::new();
     payload.insert(
         "user_id".to_string(),
-        serde_json::Value::String("17081999".to_string()),
+        serde_json::Value::String("27081999".to_string()),
     );
 
     let token = token_forge
@@ -28,7 +28,7 @@ fn test_token_generation_and_verification() {
 
 #[test]
 fn test_token_from_file() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let mut temp_file = NamedTempFile::new().unwrap();
     let json_content = r#"
@@ -58,7 +58,7 @@ fn test_token_from_file() {
 
 #[test]
 fn test_token_without_expiration() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let payload = HashMap::new();
     let token = token_forge.generate_token(payload, None).unwrap();
@@ -69,7 +69,7 @@ fn test_token_without_expiration() {
 
 #[test]
 fn test_expired_token() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let now = Utc::now().timestamp();
     let claims = Claims {
@@ -88,7 +88,7 @@ fn test_expired_token() {
 
 #[test]
 fn test_invalid_token() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let invalid_token = "invalid.token.here";
     match token_forge.verify_token(invalid_token) {
@@ -99,7 +99,7 @@ fn test_invalid_token() {
 
 #[test]
 fn test_malformed_token_wrong_number_of_parts() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let malformed_token = "hamza.mughal";
     match token_forge.verify_token(malformed_token) {
@@ -116,7 +116,7 @@ fn test_malformed_token_wrong_number_of_parts() {
 
 #[test]
 fn test_invalid_base64_signature() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let payload = HashMap::new();
     let valid_token = token_forge.generate_token(payload, None).unwrap();
@@ -132,7 +132,7 @@ fn test_invalid_base64_signature() {
 
 #[test]
 fn test_invalid_base64_payload() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let invalid_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IlRPSyJ9.invalid_base64!!!.signature";
 
@@ -144,8 +144,8 @@ fn test_invalid_base64_payload() {
 
 #[test]
 fn test_wrong_secret_signature_verification() {
-    let token_forge1 = TokenForge::with_secret("secret1");
-    let token_forge2 = TokenForge::with_secret("secret2");
+    let token_forge1 = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
+    let token_forge2 = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwert").unwrap();
 
     let payload = HashMap::new();
     let token = token_forge1.generate_token(payload, None).unwrap();
@@ -158,7 +158,7 @@ fn test_wrong_secret_signature_verification() {
 
 #[test]
 fn test_invalid_json_in_header() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let invalid_header = "{alg:HS256,typ:TOK}";
     let invalid_header_b64 =
@@ -169,7 +169,7 @@ fn test_invalid_json_in_header() {
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(valid_payload.as_bytes());
 
     let signing_input = format!("{}.{}", invalid_header_b64, valid_payload_b64);
-    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"test_secret").unwrap();
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"abcdefghij1234567890!@#$%^&*()qwer").unwrap();
     mac.update(signing_input.as_bytes());
     let signature = mac.finalize().into_bytes();
     let signature_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&signature);
@@ -187,7 +187,7 @@ fn test_invalid_json_in_header() {
 
 #[test]
 fn test_invalid_json_in_payload() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let valid_header = r#"{"alg":"HS256","typ":"TOK"}"#;
     let valid_header_b64 =
@@ -198,7 +198,7 @@ fn test_invalid_json_in_payload() {
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(invalid_payload.as_bytes());
 
     let signing_input = format!("{}.{}", valid_header_b64, invalid_payload_b64);
-    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"test_secret").unwrap();
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"abcdefghij1234567890!@#$%^&*()qwer").unwrap();
     mac.update(signing_input.as_bytes());
     let signature = mac.finalize().into_bytes();
     let signature_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&signature);
@@ -216,7 +216,7 @@ fn test_invalid_json_in_payload() {
 
 #[test]
 fn test_wrong_algorithm_in_header() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let wrong_alg_header = r#"{"alg":"RS256","typ":"TOK"}"#;
     let header_b64 =
@@ -227,7 +227,7 @@ fn test_wrong_algorithm_in_header() {
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(valid_payload.as_bytes());
 
     let signing_input = format!("{}.{}", header_b64, payload_b64);
-    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"test_secret").unwrap();
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"abcdefghij1234567890!@#$%^&*()qwer").unwrap();
     mac.update(signing_input.as_bytes());
     let signature = mac.finalize().into_bytes();
     let signature_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&signature);
@@ -242,7 +242,7 @@ fn test_wrong_algorithm_in_header() {
 
 #[test]
 fn test_wrong_type_in_header() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let wrong_type_header = r#"{"alg":"HS256","typ":"JWT"}"#;
     let header_b64 =
@@ -253,7 +253,7 @@ fn test_wrong_type_in_header() {
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(valid_payload.as_bytes());
 
     let signing_input = format!("{}.{}", header_b64, payload_b64);
-    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"test_secret").unwrap();
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(b"abcdefghij1234567890!@#$%^&*()qwer").unwrap();
     mac.update(signing_input.as_bytes());
     let signature = mac.finalize().into_bytes();
     let signature_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&signature);
@@ -268,7 +268,7 @@ fn test_wrong_type_in_header() {
 
 #[test]
 fn test_empty_json_file() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let mut temp_file = NamedTempFile::new().unwrap();
     temp_file.write_all(b"{}").unwrap();
@@ -281,7 +281,7 @@ fn test_empty_json_file() {
 
 #[test]
 fn test_invalid_json_file_syntax() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let mut temp_file = NamedTempFile::new().unwrap();
     let invalid_json = r#"{"name": "Hamza", "invalid": }"#;
@@ -295,7 +295,7 @@ fn test_invalid_json_file_syntax() {
 
 #[test]
 fn test_nonexistent_file() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let nonexistent_path = std::path::PathBuf::from("/nonexistent/path/prodesquare.json");
 
@@ -307,7 +307,7 @@ fn test_nonexistent_file() {
 
 #[test]
 fn test_complex_payload_types() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let mut payload = HashMap::new();
 
@@ -353,7 +353,7 @@ fn test_complex_payload_types() {
 
 #[test]
 fn test_negative_expiry_time() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let payload = HashMap::new();
 
@@ -367,7 +367,7 @@ fn test_negative_expiry_time() {
 
 #[test]
 fn test_very_large_expiry_time() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let payload = HashMap::new();
     let token = token_forge
@@ -381,18 +381,15 @@ fn test_very_large_expiry_time() {
 
 #[test]
 fn test_empty_secret() {
-    let token_forge = TokenForge::with_secret("");
-
-    let payload = HashMap::new();
-    let token = token_forge.generate_token(payload, None).unwrap();
-
-    let claims = token_forge.verify_token(&token).unwrap();
-    assert!(claims.payload.is_empty());
+    match TokenForge::with_secret("") {
+        Err(TokenError::WeakSecret) => (),
+        _ => panic!("Expected Weak Secret error for empty secret"),
+    }
 }
 
 #[test]
 fn test_unicode_in_payload() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let mut payload = HashMap::new();
     payload.insert(
@@ -416,7 +413,7 @@ fn test_unicode_in_payload() {
 
 #[test]
 fn test_future_iat_token() {
-    let token_forge = TokenForge::with_secret("test_secret");
+    let token_forge = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer").unwrap();
 
     let future_time = Utc::now().timestamp() + 3600;
     let claims = Claims {
@@ -431,4 +428,26 @@ fn test_future_iat_token() {
         Err(TokenError::InvalidTimestamp) => (),
         _ => panic!("Expected Invalid Timestamp error for future dated tokens"),
     }
+}
+
+#[test]
+fn test_weak_secret_too_short() {
+    match TokenForge::with_secret("prodesquare") {
+        Err(TokenError::WeakSecret) => (),
+        _ => panic!("Expected Weak Secret error for short secret"),
+    }
+}
+
+#[test]
+fn test_weak_secret_low_entropy() {
+    match TokenForge::with_secret("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+        Err(TokenError::WeakSecret) => (),
+        _ => panic!("Expected Weak Secret error for low entropy secret"),
+    }
+}
+
+#[test]
+fn test_strong_secret_acceptance() {
+    let result = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer");
+    assert!(result.is_ok());
 }
