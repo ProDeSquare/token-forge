@@ -34,4 +34,7 @@ pub enum TokenError {
 
     #[error("Invalid Timestamp")]
     InvalidTimestamp,
+
+    #[error("Secret key must be at least 32 characters and should have good entropy")]
+    WeakSecret,
 }
