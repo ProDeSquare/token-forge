@@ -451,3 +451,35 @@ fn test_strong_secret_acceptance() {
     let result = TokenForge::with_secret("abcdefghij1234567890!@#$%^&*()qwer");
     assert!(result.is_ok());
 }
+
+#[test]
+fn test_tf_secret_priority() {
+    std::env::set_var("TF_SECRET", "abcdefghij1234567890!@#$%^&*()qwer");
+    std::env::set_var("SECRET", "different_secret_12345678901234567890!@#$");
+
+    let token_forge = TokenForge::new().unwrap();
+
+    let payload = std::collections::HashMap::new();
+    let token = token_forge.generate_token(payload, None).unwrap();
+    let claims = token_forge.verify_token(&token).unwrap();
+
+    std::env::remove_var("TF_SECRET");
+
+    assert!(claims.payload.is_empty());
+}
+
+#[test]
+fn test_fallback_secret() {
+    std::env::remove_var("TF_SECRET");
+    std::env::set_var("SECRET", "fallback_secret_123456789012345678901234");
+
+    let token_forge = TokenForge::new().unwrap();
+
+    let payload = std::collections::HashMap::new();
+    let token = token_forge.generate_token(payload, None).unwrap();
+    let claims = token_forge.verify_token(&token).unwrap();
+
+    std::env::remove_var("SECRET");
+
+    assert!(claims.payload.is_empty());
+}
