@@ -26,7 +26,7 @@ pub enum TokenError {
     #[error("File Error")]
     FileError,
 
-    #[error("Environment variable SECRET not found")]
+    #[error("Environment variable TF_SECRET or SECRET not found")]
     EnvError,
 
     #[error("Base64 decoding failed")]
