@@ -21,7 +21,9 @@ impl TokenForge {
     pub fn new() -> Result<Self, TokenError> {
         dotenv::dotenv().ok();
 
-        let secret = env::var("SECRET").map_err(|_| TokenError::EnvError)?;
+        let secret = env::var("TF_SECRET")
+            .or_else(|_| env::var("SECRET"))
+            .map_err(|_| TokenError::EnvError)?;
 
         SecretValidator::validate_secret(&secret)?;
 
