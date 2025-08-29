@@ -59,7 +59,31 @@ cargo build --release
 
 ## Environment Variables
 
-Token Forge **does not compile your secret into the binary**. This is intentional. You must provide the signing key (`SECRET`) at runtime via an environment variable.
+Token Forge **does not compile your secret into the binary**. This is intentional. You must provide the signing key at runtime via an environment variable.
+
+### Secret Key Configuration
+
+Token Forge supports two environment variables for the secret key:
+
+- `TF_SECRET` (preferred) - Token Forge specific secret key
+- `SECRET` (fallback) - Generic secret key
+
+If both are set, `TF_SECRET` takes priority.
+
+### Secret Key Requirements
+
+Your secret key must meet these security requirements:
+
+- **Minimum Length**: 32 characters
+- **Good Entropy**: At least 8 unique characters for diversity
+
+Example of a strong secret (DON'T USE THIS):
+
+```bash
+export TF_SECRET="abcdefghij1234567890!@#$%^&*()qwer"
+```
+
+### Setting Environment Variables
 
 There are two common ways to set it:
 
