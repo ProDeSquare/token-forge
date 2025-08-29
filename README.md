@@ -92,7 +92,7 @@ There are two common ways to set it:
 You can export it in your shell before running the binary:
 
 ```bash
-export SECRET="my_signing_key"
+export TF_SECRET="my_signing_key"
 # run token-forge now
 ```
 
@@ -101,7 +101,7 @@ export SECRET="my_signing_key"
 Add it to your shell's configuration file (e.g., `.bashrc`, `.zshrc`, etc.):
 
 ```bash
-export SECRET="my_signing_key"
+export TF_SECRET="my_signing_key"
 ```
 
 You can also set it in your `~/.profile` or `~/.bash_profile` file.
